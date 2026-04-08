@@ -1,0 +1,83 @@
+
+- name: disabiling default nodejs
+  ansible.builtin.command: dnf module disable nodejs -y
+
+- name: enabliling nodejs:20
+  ansible.builtin.command: dnf module enable nodejs:20 -y
+
+- name: install nodejs
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: latest
+  loop:
+  - nodejs
+  - mysql
+
+- name: create the expense user
+  ansible.builtin.user:
+    name: expense
+
+# - name: create app directory
+#   ansible.builtin.file:
+#     path: /app
+#     state: directory
+
+# - name: download the application code
+#   ansible.builtin.get_url:
+#     url: https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
+#     dest: /tmp/backend.zip   
+
+# - name: unzip the backend code
+#   ansible.builtin.unarchive:
+#     src: /tmp/backend.zip   # by default it checks in ansible server
+#     dest: /app
+#     remote_src: yes   # it is to make changes in remote server
+
+- name: run app_pre_requisites
+  tags:
+  - deployment
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: app_pre_req
+
+- name: install npm packages
+  tags:
+  - deployment
+  ansible.builtin.command: npm install
+  args:
+    chdir: /app    # to change directory to app
+
+- name: copy the backend service
+  ansible.builtin.template:
+    src: backend.service.j2
+    dest: /etc/systemd/system/backend.service
+
+- name: install python mysql dependencies
+  ansible.builtin.pip:    # to built mysql db from ansible 
+    name:
+    - PyMySQL
+    - cryptography
+    executable: pip3.9
+
+- name: import data to mysql
+  community.mysql.mysql_db:
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+      login_host: "{{ login_host }}"
+      target: /app/schema/backend.sql
+      state: import
+      name: all 
+
+# - name: deamon reload
+#   ansible.builtin.systemd_service:
+#     daemon_reload: true
+  notify:
+  - deamon reload
+
+- name: start and enable backend
+  tags:
+  - deployment
+  ansible.builtin.service:
+    name: backend
+    state: restarted
+    enabled: yes

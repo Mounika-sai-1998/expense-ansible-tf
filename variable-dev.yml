@@ -1,0 +1,4 @@
+mysql_root_password: ExpenseApp@1
+login_host: db-dev.mounikasai.shop
+login_user: root
+DB_HOST: db-dev.mounikasai.shop
