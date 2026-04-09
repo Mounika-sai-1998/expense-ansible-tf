@@ -1,4 +1,5 @@
-mysql_root_password: ExpenseApp@1
+mysql_root_password: ExpenseApp1
 login_host: db-dev.mounikasai.shop
 login_user: root
 DB_HOST: db-dev.mounikasai.shop
+BACKEND_API_URL: backend.app-dev.mounikasai.shop
